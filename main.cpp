@@ -12,7 +12,10 @@
 int main(int argc, const char * argv[]) {
     
     virtualMachine x;
-    x.getChars();
+    unsigned short y;
+    y = x.getWord();
+    
+    cout << y << endl;
     
     return 0;
 }

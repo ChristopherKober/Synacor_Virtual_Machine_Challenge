@@ -15,12 +15,24 @@ using namespace std;
 
 
 
+virtualMachine::virtualMachine() {
+    //ifstream temp("challenge.bin", ios::in|ios::binary);
+    file = ifstream("challenge.bin", ios::in|ios::binary);
+}
 
-void virtualMachine::getChars() {
-    ifstream file ("challenge.bin", ios::in|ios::binary);
-    char letter;
-    file.get(letter);
-    cout << (unsigned short) letter << endl;
+
+unsigned short virtualMachine::getWord() {
+    if (file.eof()) {
+        return -1;
+    }
+    char firstByte;
+    char secondByte;
+    file.get(firstByte);
+    file.get(secondByte);
+    unsigned short retval;
+    //retval = (((unsigned short) (firstByte) << 8)) + ((unsigned short) secondByte);
+    retval = (((unsigned short) (firstByte))) + (((unsigned short) secondByte) << 8);
+    return retval;
 }
 
 
