@@ -12,10 +12,8 @@
 int main(int argc, const char * argv[]) {
     
     virtualMachine x;
-    unsigned short y;
-    y = x.getWord();
     
-    cout << y << endl;
+    x.run();
     
     return 0;
 }

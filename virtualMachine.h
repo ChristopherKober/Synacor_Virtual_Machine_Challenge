@@ -15,16 +15,14 @@ using namespace std;
 class virtualMachine {
 public:
     virtualMachine();
-    unsigned short getWord();
+    void run();
     
 private:
+    int interpretCommand(unsigned short command);
+    unsigned short getWord();
+    
     ifstream file;
-    unsigned short r1;
-    unsigned short r2;
-    unsigned short r3;
-    unsigned short r4;
-    unsigned short r5;
-    unsigned short r6;
-    unsigned short r7;
-    unsigned short r8;
+    unsigned short r[8];
+    int eip;
+    short flags;
 };
