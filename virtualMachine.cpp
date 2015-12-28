@@ -46,7 +46,6 @@ using namespace std;
 
 
 virtualMachine::virtualMachine() {
-    file = ifstream("challenge.bin", ios::in|ios::binary);
     eip = 0;
     flags = 0;
     for (int i = 0; i<8;i++) {
@@ -67,10 +66,13 @@ unsigned short virtualMachine::getWord() {
     }
     file.get(firstByte);
     file.get(secondByte);
+    
     return (((unsigned short) (firstByte))) + (((unsigned short) secondByte) << 8);
 }
 
-void virtualMachine::run() {
+void virtualMachine::run(string f) {
+    file = fstream(f, ios::in|ios::binary);
+    
     unsigned short val;
     int running = 0;
     
@@ -86,56 +88,66 @@ int virtualMachine::interpretCommand(unsigned short command) {
     unsigned short secondVal;
     unsigned short thirdVal;
     
-    if (!(command == HALT || command == OUT || command == NOP)) {
-        return 1;
-    }
-    
     switch (command) {
         case HALT:
             return 1;
-            break;
         case SET:
-            break;
+            firstVal = getWord();
+            secondVal = getWord();
+            return set(firstVal,secondVal);
         case PUSH:
-            break;
+            return 1;
         case POP:
-            break;
+            return 1;
         case EQ:
-            break;
+            firstVal = getWord();
+            secondVal = getWord();
+            thirdVal = getWord();
+            return eq(firstVal, secondVal, thirdVal);
         case GT:
-            break;
+            firstVal = getWord();
+            secondVal = getWord();
+            thirdVal = getWord();
+            return gt(firstVal, secondVal, thirdVal);
         case JMP:
-            break;
+            firstVal = getWord();
+            return jmp(firstVal);
         case JT:
-            break;
+            firstVal = getWord();
+            secondVal = getWord();
+            return jt(firstVal, secondVal);
         case JF:
-            break;
+            firstVal = getWord();
+            secondVal = getWord();
+            return jf(firstVal, secondVal);
         case ADD:
-            break;
+            return 1;
         case MULT:
-            break;
+            return 1;
         case MOD:
-            break;
+            return 1;
         case AND:
-            break;
+            return 1;
         case OR:
-            break;
+            return 1;
         case NOT:
-            break;
+            return 1;
         case RMEM:
-            break;
+            return 1;
         case WMEM:
-            break;
+            firstVal = getWord();
+            secondVal = getWord();
+            return wmem(firstVal, secondVal);
         case CALL:
-            break;
+            return 1;
         case RET:
-            break;
+            return 1;
         case OUT:
             firstVal = getWord();
             cout << (char) firstVal;
             break;
         case IN:
-            break;
+            return 1;
         case NOP:
             break;
         default:
@@ -144,6 +156,148 @@ int virtualMachine::interpretCommand(unsigned short command) {
             break;
     }
     
+    
+    return 0;
+}
+
+int virtualMachine::set(unsigned short reg, unsigned short val) {
+    if (reg < 32768 || reg > 32775) {
+        cout << "Command Set: Invalid register value" << endl;
+        return 1;
+    }
+    if (val > 32775) {
+        cout << "Command Set: Invalid set value" << endl;
+        return 1;
+    }
+    
+    if (val < 32768) {
+        r[reg - 32768] = val;
+    } else {
+        r[reg - 32768] = r[val - 32768];
+    }
+    return 0;
+}
+
+int virtualMachine::eq(unsigned short dest, unsigned short val1, unsigned short val2) {
+    if (val1 > 32775 || val2 > 32775) {
+        cout << "Command Eq: Invalid test values" << endl;
+        return 1;
+    }
+    if (dest > 32775) {
+        cout << "Command Eq: Invalid destination value" << endl;
+        return 1;
+    }
+    
+    if (val1 < 32768) {
+        val1 = r[val1 - 32768];
+    }
+    if (val2 < 32768) {
+        val2 = r[val2 - 32768];
+    }
+    
+    unsigned short destVal = 0;
+    if (val1 == val2) {
+        destVal = 1;
+    }
+    
+    if (dest > 32767) {
+        r[dest - 32768] = destVal;
+    } else {
+        wmem(dest,destVal);
+    }
+    
+    return 0;
+}
+
+int virtualMachine::gt(unsigned short dest, unsigned short val1, unsigned short val2) {
+    if (val1 > 32775 || val2 > 32775) {
+        cout << "Command Eq: Invalid test values" << endl;
+        return 1;
+    }
+    if (dest > 32775) {
+        cout << "Command Eq: Invalid destination value" << endl;
+        return 1;
+    }
+    
+    if (val1 >= 32768) {
+        val1 = r[val1 - 32768];
+    }
+    if (val2 >= 32768) {
+        val2 = r[val2 - 32768];
+    }
+    
+    unsigned short destVal = 0;
+    if (val1 > val2) {
+        destVal = 1;
+    }
+    
+    if (dest > 32767) {
+        r[dest - 32768] = destVal;
+    } else {
+        wmem(dest,destVal);
+    }
+    
+    return 0;
+}
+
+int virtualMachine::jmp(unsigned short loc) {
+    if (loc > 32775) {
+        cout << "Command Jmp: Invalid jump location" << endl;
+        return 1;
+    }
+    
+    if (loc < 32768) {
+        file.seekg(((long long)loc)*2);
+    } else {
+        file.seekg(((long long)r[loc - 32768])*2);
+    }
+    return 0;
+}
+
+int virtualMachine::jt(unsigned short val, unsigned short dest) {
+    if (val > 32775) {
+        cout << "Command Jt: Invalid test value" << endl;
+        return 1;
+    }
+    if (val > 32767) {
+        val = r[val - 32768];
+    }
+    
+    if (val != 0) {
+        return jmp(dest);
+    }
+    return 0;
+}
+
+int virtualMachine::jf(unsigned short val, unsigned short dest) {
+    if (val > 32775) {
+        cout << "Command Jt: Invalid test value" << endl;
+        return 1;
+    }
+    if (val > 32767) {
+        val = r[val - 32768];
+    }
+    
+    if (val == 0) {
+        return jmp(dest);
+    }
+    return 0;
+}
+
+int virtualMachine::wmem(unsigned short dest, unsigned short val) {
+    if (val > 32775) {
+        cout << "Command Wmem: Invalid write value" << endl;
+        return 1;
+    }
+    
+    long long start = file.tellg();
+    
+    file.seekg(((long long) dest)*2);
+    
+    file.put((char) val & 255);
+    file.put((char) val >> 8);
+    
+    file.seekg(start);
     
     return 0;
 }

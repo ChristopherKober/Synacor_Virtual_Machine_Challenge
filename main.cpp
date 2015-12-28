@@ -13,7 +13,7 @@ int main(int argc, const char * argv[]) {
     
     virtualMachine x;
     
-    x.run();
+    x.run("challenge.bin");
     
     return 0;
 }
