@@ -55,15 +55,13 @@ virtualMachine::virtualMachine() {
 
 
 unsigned short virtualMachine::getWord() {
+    
     if (file.eof()) {
         return -1;
     }
     char firstByte;
     char secondByte;
-    if (flags & JUMPED) {
-        flags = flags | ~JUMPED;
-        file.seekg(eip*2);
-    }
+    
     file.get(firstByte);
     file.get(secondByte);
     
@@ -71,7 +69,7 @@ unsigned short virtualMachine::getWord() {
 }
 
 void virtualMachine::run(string f) {
-    file = fstream(f, ios::in|ios::binary);
+    file = fstream(f, fstream::in | fstream::out | ios::binary);
     
     unsigned short val;
     int running = 0;
@@ -94,6 +92,7 @@ int virtualMachine::interpretCommand(unsigned short command) {
         case SET:
             firstVal = getWord();
             secondVal = getWord();
+            cout << "SET" << endl;
             return set(firstVal,secondVal);
         case PUSH:
             return 1;
@@ -103,22 +102,29 @@ int virtualMachine::interpretCommand(unsigned short command) {
             firstVal = getWord();
             secondVal = getWord();
             thirdVal = getWord();
+            cout << "EQ" << endl;
             return eq(firstVal, secondVal, thirdVal);
         case GT:
             firstVal = getWord();
             secondVal = getWord();
             thirdVal = getWord();
+            cout << "GT" << endl;
             return gt(firstVal, secondVal, thirdVal);
         case JMP:
             firstVal = getWord();
+            cout << "JMP" << endl;
+            
+            cout << firstVal << endl;
             return jmp(firstVal);
         case JT:
             firstVal = getWord();
             secondVal = getWord();
+            cout << "JT" << endl;
             return jt(firstVal, secondVal);
         case JF:
             firstVal = getWord();
             secondVal = getWord();
+            cout << "JF" << endl;
             return jf(firstVal, secondVal);
         case ADD:
             return 1;
@@ -137,6 +143,7 @@ int virtualMachine::interpretCommand(unsigned short command) {
         case WMEM:
             firstVal = getWord();
             secondVal = getWord();
+            cout << "WMEM" << endl;
             return wmem(firstVal, secondVal);
         case CALL:
             return 1;
@@ -211,11 +218,11 @@ int virtualMachine::eq(unsigned short dest, unsigned short val1, unsigned short 
 
 int virtualMachine::gt(unsigned short dest, unsigned short val1, unsigned short val2) {
     if (val1 > 32775 || val2 > 32775) {
-        cout << "Command Eq: Invalid test values" << endl;
+        cout << "Command Gt: Invalid test values" << endl;
         return 1;
     }
     if (dest > 32775) {
-        cout << "Command Eq: Invalid destination value" << endl;
+        cout << "Command Gt: Invalid destination value" << endl;
         return 1;
     }
     
@@ -247,10 +254,12 @@ int virtualMachine::jmp(unsigned short loc) {
     }
     
     if (loc < 32768) {
-        file.seekg(((long long)loc)*2);
+        file.seekg(loc << 1);
     } else {
-        file.seekg(((long long)r[loc - 32768])*2);
+        file.seekg(r[loc - 32768] << 1);
     }
+    
+    
     return 0;
 }
 
@@ -271,7 +280,7 @@ int virtualMachine::jt(unsigned short val, unsigned short dest) {
 
 int virtualMachine::jf(unsigned short val, unsigned short dest) {
     if (val > 32775) {
-        cout << "Command Jt: Invalid test value" << endl;
+        cout << "Command Jf: Invalid test value" << endl;
         return 1;
     }
     if (val > 32767) {
