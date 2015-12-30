@@ -11,9 +11,20 @@
 
 int main(int argc, const char * argv[]) {
     
-    virtualMachine x;
+    //virtualMachine x;
     
-    x.run("challenge.bin");
+    //x.run("challenge.bin");
+    
+    stack x;
+    for (int i = 0;i<10;i++) {
+        x.push(i);
+        
+    }
+    
+    for (int i = 0;i<10;i++) {
+        cout << x.pop() << endl;
+        
+    }
     
     return 0;
 }

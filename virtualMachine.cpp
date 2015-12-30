@@ -46,8 +46,6 @@ using namespace std;
 
 
 virtualMachine::virtualMachine() {
-    eip = 0;
-    flags = 0;
     for (int i = 0; i<8;i++) {
         r[i] = 0;
     }
@@ -65,7 +63,7 @@ unsigned short virtualMachine::getWord() {
     file.get(firstByte);
     file.get(secondByte);
     
-    return (((unsigned short) (firstByte))) + (((unsigned short) secondByte) << 8);
+    return (((unsigned short) (firstByte)) & 255) + ((((unsigned short) secondByte) << 8) & ~(255));
 }
 
 void virtualMachine::run(string f) {
@@ -73,11 +71,13 @@ void virtualMachine::run(string f) {
     
     unsigned short val;
     int running = 0;
-    
+
     while (running == 0) {
         val = getWord();
         running = interpretCommand(val);
     }
+    
+    cout << val << endl;
 }
 
 int virtualMachine::interpretCommand(unsigned short command) {
@@ -92,58 +92,72 @@ int virtualMachine::interpretCommand(unsigned short command) {
         case SET:
             firstVal = getWord();
             secondVal = getWord();
-            cout << "SET" << endl;
+            //cout << "SET" << endl;
             return set(firstVal,secondVal);
         case PUSH:
-            return 1;
+            firstVal = getWord();
+            return push(firstVal);
         case POP:
-            return 1;
+            firstVal = getWord();
+            return pop(firstVal);
         case EQ:
             firstVal = getWord();
             secondVal = getWord();
             thirdVal = getWord();
-            cout << "EQ" << endl;
+            //cout << "EQ" << endl;
             return eq(firstVal, secondVal, thirdVal);
         case GT:
             firstVal = getWord();
             secondVal = getWord();
             thirdVal = getWord();
-            cout << "GT" << endl;
+            //cout << "GT" << endl;
             return gt(firstVal, secondVal, thirdVal);
         case JMP:
             firstVal = getWord();
-            cout << "JMP" << endl;
-            
-            cout << firstVal << endl;
             return jmp(firstVal);
         case JT:
             firstVal = getWord();
             secondVal = getWord();
-            cout << "JT" << endl;
             return jt(firstVal, secondVal);
         case JF:
             firstVal = getWord();
             secondVal = getWord();
-            cout << "JF" << endl;
             return jf(firstVal, secondVal);
         case ADD:
-            return 1;
+            firstVal = getWord();
+            secondVal = getWord();
+            thirdVal = getWord();
+            return add(firstVal, secondVal, thirdVal);
         case MULT:
-            return 1;
+            firstVal = getWord();
+            secondVal = getWord();
+            thirdVal = getWord();
+            return mult(firstVal, secondVal, thirdVal);
         case MOD:
-            return 1;
+            firstVal = getWord();
+            secondVal = getWord();
+            thirdVal = getWord();
+            return mod(firstVal, secondVal, thirdVal);
         case AND:
-            return 1;
+            firstVal = getWord();
+            secondVal = getWord();
+            thirdVal = getWord();
+            return And(firstVal, secondVal, thirdVal);
         case OR:
-            return 1;
+            firstVal = getWord();
+            secondVal = getWord();
+            thirdVal = getWord();
+            return Or(firstVal, secondVal, thirdVal);
         case NOT:
-            return 1;
+            firstVal = getWord();
+            secondVal = getWord();
+            return Not(firstVal, secondVal);
         case RMEM:
             return 1;
         case WMEM:
             firstVal = getWord();
             secondVal = getWord();
-            cout << "WMEM" << endl;
+            //cout << "WMEM" << endl;
             return wmem(firstVal, secondVal);
         case CALL:
             return 1;
@@ -185,6 +199,38 @@ int virtualMachine::set(unsigned short reg, unsigned short val) {
     return 0;
 }
 
+int virtualMachine::push(unsigned short val) {
+    if (val > 32775) {
+        cout << "Command Push: Invalid input value" << endl;
+        return 1;
+    }
+    s.push(val);
+    
+    return 0;
+}
+
+int virtualMachine::pop(unsigned short dest) {
+    if (dest > 32775) {
+        cout << "Command Pop: Invalid destination value" << endl;
+        return 1;
+    }
+    
+    unsigned short retVal = s.pop();
+    
+    if (retVal == (unsigned short) -1) {
+        cout << "Command Pop: Stack is Empty" << endl;
+        return 1;
+    }
+    
+    if (dest > 32767) {
+        r[dest - 32768] = retVal;
+    } else {
+        wmem(dest, retVal);
+    }
+    
+    return 0;
+}
+
 int virtualMachine::eq(unsigned short dest, unsigned short val1, unsigned short val2) {
     if (val1 > 32775 || val2 > 32775) {
         cout << "Command Eq: Invalid test values" << endl;
@@ -195,10 +241,10 @@ int virtualMachine::eq(unsigned short dest, unsigned short val1, unsigned short 
         return 1;
     }
     
-    if (val1 < 32768) {
+    if (val1 > 32767) {
         val1 = r[val1 - 32768];
     }
-    if (val2 < 32768) {
+    if (val2 > 32767) {
         val2 = r[val2 - 32768];
     }
     
@@ -226,10 +272,10 @@ int virtualMachine::gt(unsigned short dest, unsigned short val1, unsigned short 
         return 1;
     }
     
-    if (val1 >= 32768) {
+    if (val1 > 32767) {
         val1 = r[val1 - 32768];
     }
-    if (val2 >= 32768) {
+    if (val2 > 32767) {
         val2 = r[val2 - 32768];
     }
     
@@ -248,17 +294,18 @@ int virtualMachine::gt(unsigned short dest, unsigned short val1, unsigned short 
 }
 
 int virtualMachine::jmp(unsigned short loc) {
+    
     if (loc > 32775) {
         cout << "Command Jmp: Invalid jump location" << endl;
         return 1;
     }
     
     if (loc < 32768) {
-        file.seekg(loc << 1);
+        file.seekg((loc << 1) );
     } else {
-        file.seekg(r[loc - 32768] << 1);
+        file.seekg((r[loc - 32768] << 1) );
     }
-    
+
     
     return 0;
 }
@@ -293,7 +340,165 @@ int virtualMachine::jf(unsigned short val, unsigned short dest) {
     return 0;
 }
 
+int virtualMachine::add(unsigned short dest, unsigned short val1, unsigned short val2) {
+    if (dest > 32775) {
+        cout << "Command Add: Invalid destination" << endl;
+        return 1;
+    }
+    
+    if (val1 > 32775 || val2 > 32775) {
+        cout << "Command Add: Invalid add value" << endl;
+        return 1;
+    }
+    
+    if (val1 > 32767) {
+        val1 = r[val1 - 32768];
+    }
+    if (val2 > 32767) {
+        val2 = r[val2 -  32768];
+    }
+    
+    if (dest > 32767) {
+        r[dest - 32768] = (val1 + val2) % 32768;
+    } else {
+        return wmem(dest, (val1 + val2) % 32768);
+    }
+    return 0;
+}
+
+int virtualMachine::mult(unsigned short dest, unsigned short val1, unsigned short val2) {
+    if (dest > 32775) {
+        cout << "Command Mult: Invalid destination" << endl;
+        return 1;
+    }
+    
+    if (val1 > 32775 || val2 > 32775) {
+        cout << "Command Mult: Invalid multiply value" << endl;
+        return 1;
+    }
+    
+    if (val1 > 32767) {
+        val1 = r[val1 - 32768];
+    }
+    if (val2 > 32767) {
+        val2 = r[val2 -  32768];
+    }
+    
+    unsigned int retVal = val1 * val2;
+    
+    if (dest > 32767) {
+        r[dest - 32768] = (unsigned short) (retVal % 32768);
+    } else {
+        return wmem(dest, (unsigned short) (retVal % 32768));
+    }
+    return 0;
+}
+
+int virtualMachine::mod(unsigned short dest, unsigned short val1, unsigned short val2) {
+    if (dest > 32775) {
+        cout << "Command Mod: Invalid destination" << endl;
+        return 1;
+    }
+    
+    if (val1 > 32775 || val2 > 32775) {
+        cout << "Command Mod: Invalid input value" << endl;
+        return 1;
+    }
+    
+    if (val1 > 32767) {
+        val1 = r[val1 - 32768];
+    }
+    if (val2 > 32767) {
+        val2 = r[val2 -  32768];
+    }
+    
+    if (dest > 32767) {
+        r[dest - 32768] = (val1 % val2);
+    } else {
+        return wmem(dest, (val1 % val2));
+    }
+    return 0;
+}
+
+int virtualMachine::And(unsigned short dest, unsigned short val1, unsigned short val2) {
+    if (dest > 32775) {
+        cout << "Command And: Invalid destination" << endl;
+        return 1;
+    }
+    
+    if (val1 > 32775 || val2 > 32775) {
+        cout << "Command And: Invalid input value" << endl;
+        return 1;
+    }
+    
+    if (val1 > 32767) {
+        val1 = r[val1 - 32768];
+    }
+    if (val2 > 32767) {
+        val2 = r[val2 -  32768];
+    }
+    
+    if (dest > 32767) {
+        r[dest - 32768] = (val1 & val2);
+    } else {
+        return wmem(dest, (val1 & val2));
+    }
+    return 0;
+}
+
+int virtualMachine::Or(unsigned short dest, unsigned short val1, unsigned short val2) {
+    if (dest > 32775) {
+        cout << "Command Or: Invalid destination" << endl;
+        return 1;
+    }
+    
+    if (val1 > 32775 || val2 > 32775) {
+        cout << "Command Or: Invalid input value" << endl;
+        return 1;
+    }
+    
+    if (val1 > 32767) {
+        val1 = r[val1 - 32768];
+    }
+    if (val2 > 32767) {
+        val2 = r[val2 -  32768];
+    }
+    
+    if (dest > 32767) {
+        r[dest - 32768] = (val1 | val2);
+    } else {
+        return wmem(dest, (val1 | val2));
+    }
+    return 0;
+}
+
+int virtualMachine::Not(unsigned short dest, unsigned short val) {
+    if (dest > 32775) {
+        cout << "Command Not: Invalid destination" << endl;
+        return 1;
+    }
+    
+    if (val > 32775) {
+        cout << "Command Not: Invalid input value" << endl;
+        return 1;
+    }
+    
+    if (val > 32767) {
+        val = r[val - 32768];
+    }
+    
+    if (dest > 32767) {
+        r[dest - 32768] = (~val & 32767);
+    } else {
+        return wmem(dest, (~val & 32767));
+    }
+    return 0;
+}
+
 int virtualMachine::wmem(unsigned short dest, unsigned short val) {
+    
+    cout << "wmem called" << endl;
+    
     if (val > 32775) {
         cout << "Command Wmem: Invalid write value" << endl;
         return 1;
