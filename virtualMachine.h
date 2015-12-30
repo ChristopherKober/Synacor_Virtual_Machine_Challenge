@@ -37,8 +37,12 @@ private:
     int And(unsigned short dest, unsigned short val1, unsigned short val2);
     int Or(unsigned short dest, unsigned short val1, unsigned short val2);
     int Not(unsigned short dest, unsigned short val);
-    
+    int rmem(unsigned short dest, unsigned short adr);
     int wmem(unsigned short dest, unsigned short val);
+    int call(unsigned short start);
+    int ret();
+    int Out(unsigned short chr);
+    int In(unsigned short dest);
     
     fstream file;
     unsigned short r[8];

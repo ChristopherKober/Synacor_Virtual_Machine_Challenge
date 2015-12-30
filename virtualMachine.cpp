@@ -13,9 +13,6 @@
 #include <fstream>
 using namespace std;
 
-//flags
-#define JUMPED 1
-
 
 //commands
 #define HALT 0
@@ -69,7 +66,7 @@ unsigned short virtualMachine::getWord() {
 void virtualMachine::run(string f) {
     file = fstream(f, fstream::in | fstream::out | ios::binary);
     
-    unsigned short val;
+    unsigned short val = 0;
     int running = 0;
 
     while (running == 0) {
@@ -92,7 +89,6 @@ int virtualMachine::interpretCommand(unsigned short command) {
         case SET:
             firstVal = getWord();
             secondVal = getWord();
-            //cout << "SET" << endl;
             return set(firstVal,secondVal);
         case PUSH:
             firstVal = getWord();
@@ -104,13 +100,11 @@ int virtualMachine::interpretCommand(unsigned short command) {
             firstVal = getWord();
             secondVal = getWord();
             thirdVal = getWord();
-            //cout << "EQ" << endl;
             return eq(firstVal, secondVal, thirdVal);
         case GT:
             firstVal = getWord();
             secondVal = getWord();
             thirdVal = getWord();
-            //cout << "GT" << endl;
             return gt(firstVal, secondVal, thirdVal);
         case JMP:
             firstVal = getWord();
@@ -153,22 +147,24 @@ int virtualMachine::interpretCommand(unsigned short command) {
             secondVal = getWord();
             return Not(firstVal, secondVal);
         case RMEM:
-            return 1;
+            firstVal = getWord();
+            secondVal = getWord();
+            return rmem(firstVal, secondVal);
         case WMEM:
             firstVal = getWord();
             secondVal = getWord();
-            //cout << "WMEM" << endl;
             return wmem(firstVal, secondVal);
         case CALL:
-            return 1;
+            firstVal = getWord();
+            return call(firstVal);
         case RET:
-            return 1;
+            return ret();
         case OUT:
             firstVal = getWord();
-            cout << (char) firstVal;
-            break;
+            return Out(firstVal);
         case IN:
-            return 1;
+            firstVal = getWord();
+            return In(firstVal);
         case NOP:
             break;
         default:
@@ -204,7 +200,12 @@ int virtualMachine::push(unsigned short val) {
         cout << "Command Push: Invalid input value" << endl;
         return 1;
     }
-    s.push(val);
+    
+    if (val > 32767) {
+        s.push(r[val - 32768]);
+    } else {
+        s.push(val);
+    }
     
     return 0;
 }
@@ -495,23 +496,107 @@ int virtualMachine::Not(unsigned short dest, unsigned short val) {
     return 0;
 }
 
-int virtualMachine::wmem(unsigned short dest, unsigned short val) {
+int virtualMachine::rmem(unsigned short dest, unsigned short adr) {
+    if (dest > 32775) {
+        cout << "Command Rmem: Invalid destination" << endl;
+        return 1;
+    }
     
-    cout << "wmem called" << endl;
+    if (adr > 32775) {
+        cout << "Command Rmem: Invalid memory address" << endl;
+        return 1;
+    }
+    
+    if (adr > 32767) {
+        adr = r[adr - 32768];
+    }
+    
+    long long start = file.tellg();
+    
+    jmp(adr);
+    unsigned short val = getWord();
+    
+    if (dest > 32767) {
+        r[dest - 32768] = val;
+    } else {
+        wmem(dest,val);
+    }
+    
+    jmp(start >> 1);
+    
+    return 0;
+}
+
+int virtualMachine::wmem(unsigned short dest, unsigned short val) {
     
     if (val > 32775) {
         cout << "Command Wmem: Invalid write value" << endl;
         return 1;
     }
     
-    long long start = file.tellg();
+    long long start = file.tellp();
     
-    file.seekg(((long long) dest)*2);
+    if (dest > 32767) {
+        dest = r[dest - 32768];
+    }
     
-    file.put((char) val & 255);
-    file.put((char) val >> 8);
+    if (val > 32767) {
+        val = r[val - 32768];
+    }
     
-    file.seekg(start);
+    file.seekp(dest << 1);
+    
+    file.put((char) (val & 255));
+    file.put((char) ((val >> 8) & 255));
+    
+    file.seekp(start);
+    
+    return 0;
+}
+
+int virtualMachine::call(unsigned short start) {
+    if (start > 32775) {
+        cout << "Command Call: Invalid destination address" << endl;
+        return 1;
+    }
+    
+    long long val = file.tellg();
+    
+    if (start > 32767) {
+        start = r[start - 32768];
+    }
+    
+    return push(((unsigned short) (val/2))) & jmp(start);
+}
+
+int virtualMachine::ret() {
+    unsigned short dest = s.pop();
+    
+    if (dest == (unsigned short) -1) {
+        return 1;
+    }
+    
+    return jmp(dest);
+}
+
+int virtualMachine::Out(unsigned short chr) {
+    cout << (char) chr;
+    return 0;
+}
+
+int virtualMachine::In(unsigned short dest) {
+    if (dest > 32775) {
+        cout << "Command In: Invalid memory address" << endl;
+        return 1;
+    }
+    
+    string x;
+    
+    cin >> x;
+    
+    for (int i = 0; i < x.length();i++) {
+        wmem(dest+i, x[i]);
+    }
     
     return 0;
 }
