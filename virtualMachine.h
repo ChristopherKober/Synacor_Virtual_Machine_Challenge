@@ -17,11 +17,16 @@ using namespace std;
 class virtualMachine {
 public:
     virtualMachine();
+    void runProtected(string f);
     void run(string f);
+    void debugProtected(string f);
+    void debug(string f);
+    ~virtualMachine();
     
 private:
     int interpretCommand(unsigned short command);
     unsigned short getWord();
+    unsigned short getAddress();
     
     int set(unsigned short reg, unsigned short val);
     int push(unsigned short val);
@@ -44,8 +49,22 @@ private:
     int Out(unsigned short chr);
     int In(unsigned short dest);
     
+    void addBreak(string op);
+    void removeBreak(string op);
+    void printBreaks();
+    void clearBreaks();
+    void printCommands(string num);
+    void dumpRegisters();
+    void printHelp();
+    void debugJmp(string adr);
+    int numArgs(unsigned short cmd);
+    string getString(unsigned short cmd);
+    
     fstream file;
     unsigned short r[8];
     stack s;
+    unsigned char opBreaks[22];
+    unsigned char lineBreaks[50];
+    int numLineBreaks;
 };
 

@@ -6,20 +6,16 @@
 //
 //
 
+#include <stdio.h>
 #include <iostream>
+#include <fstream>
+using namespace std;
 #include "virtualMachine.h"
 
 int main(int argc, const char * argv[]) {
-    
     virtualMachine x;
     
-    x.run("challenge.bin");
+    x.runProtected("challenge.bin");
     
-    x.r[0] = 0;
-    for (int i = 0; i< 10;i++){
-        x.set(32768, i);
-        cout << x.r[0] << endl;
-    }
-
     return 0;
 }
