@@ -63,8 +63,9 @@ private:
     fstream file;
     unsigned short r[8];
     stack s;
+    string inBuf;
     unsigned char opBreaks[22];
-    unsigned char lineBreaks[50];
+    unsigned short lineBreaks[50];
     int numLineBreaks;
 };
 

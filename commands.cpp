@@ -427,13 +427,18 @@ int virtualMachine::In(unsigned short dest) {
         return 1;
     }
     
-    string x;
-    
-    getline(cin, x);
-    
-    for (int i = 0; i < x.length();i++) {
-        wmem(dest+i, x[i]);
+    if (inBuf == "") {
+        getline(cin, inBuf);
+        inBuf.append("\n");
     }
+
+    if (dest > 32767) {
+        r[dest - 32768] = (unsigned short) inBuf[0];
+    } else {
+        wmem(dest, (unsigned short) inBuf[0]);
+    }
+    
+    inBuf = inBuf.substr(1);
     
     return 0;
 }

@@ -36,6 +36,18 @@ unsigned short stack::pop() {
     return -1;
 }
 
+void stack::printStack() {
+    stackMember *temp = head;
+    int counter = 0;
+    while (temp) {
+        printf("%6i: ",counter);
+        temp->printData();
+        printf("\n");
+        temp = temp->next;
+        counter++;
+    }
+}
+
 stack::~stack() {
     while (head) {
         pop();
@@ -44,4 +56,8 @@ stack::~stack() {
 
 stackMember::stackMember() {
     next = NULL;
+}
+
+void stackMember::printData() {
+    printf("%6i",data);
 }

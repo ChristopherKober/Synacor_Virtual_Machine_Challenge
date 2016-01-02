@@ -15,7 +15,7 @@ using namespace std;
 int main(int argc, const char * argv[]) {
     virtualMachine x;
     
-    x.runProtected("challenge.bin");
+    x.debugProtected("challenge.bin");
     
     return 0;
 }

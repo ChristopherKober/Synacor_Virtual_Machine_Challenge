@@ -48,6 +48,8 @@ virtualMachine::virtualMachine() {
     }
     
     clearBreaks();
+    
+    inBuf = "";
 }
 
 

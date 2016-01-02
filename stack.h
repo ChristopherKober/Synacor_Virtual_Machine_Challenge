@@ -15,6 +15,7 @@ public:
     stack();
     void push(unsigned short val);
     unsigned short pop();
+    void printStack();
     ~stack();
     
 private:
@@ -25,6 +26,7 @@ class stackMember {
 public:
     stackMember();
     friend class stack;
+    void printData();
 private:
     unsigned short data;
     stackMember *next;

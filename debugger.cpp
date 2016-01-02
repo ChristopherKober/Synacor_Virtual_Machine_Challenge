@@ -26,6 +26,7 @@ void virtualMachine::debug(string f){
     cout << "Welcome to the Virtual Machine debugger:" << endl << endl;
     
     while (command != "run"){
+        cout << "> ";
         getline(cin, command);
         if (command[0] == 'b' && command[1] == ' ') {
             addBreak(command.substr(2));
@@ -33,10 +34,16 @@ void virtualMachine::debug(string f){
             removeBreak(command.substr(3));
         } else if (command == "pb") {
             printBreaks();
+        } else if (command == "cb") {
+            clearBreaks();
         } else if (command == "help") {
             printHelp();
         } else if (command == "q"){
             return;
+        } else if (command == "run") {
+            continue;
+        } else if (command == "ps") {
+            s.printStack();
         } else if (command != "") {
             cout << "Unknown debugger command. Type help for more information" << endl;
         }
@@ -51,13 +58,17 @@ void virtualMachine::debug(string f){
             
             unsigned short adr = getAddress();
             
-            for (int i = 0; i < 50;i++){
+            for (int i = 0; i < numLineBreaks;i++){
                 if (lineBreaks[i] == 0) {
                     continue;
                 } else if (lineBreaks[i] == adr) {
                     mode = STEP_MODE;
-                    continue;
+                    break;
                 }
+            }
+            
+            if (mode == STEP_MODE){
+                continue;
             }
             
             val = getWord();
@@ -71,6 +82,7 @@ void virtualMachine::debug(string f){
             command = "";
             
             while (command != "ni") {
+                cout << "> ";
                 getline(cin, command);
                 if (command[0] == 'b' && command[1] == ' ') {
                     addBreak(command.substr(2));
@@ -78,6 +90,8 @@ void virtualMachine::debug(string f){
                     removeBreak(command.substr(3));
                 } else if (command == "pb") {
                     printBreaks();
+                } else if (command == "cb") {
+                    clearBreaks();
                 } else if (command == "disas") {
                     printCommands("20");
                 } else if (command.substr(0,6) == "disas ") {
@@ -93,6 +107,10 @@ void virtualMachine::debug(string f){
                 } else if (command == "run") {
                     mode = RUN_MODE;
                     break;
+                } else if (command == "ni") {
+                    continue;
+                } else if (command == "ps") {
+                    s.printStack();
                 } else if (command != "") {
                     cout << "Unknown debugger command. Type help for more information" << endl;
                 }
@@ -122,6 +140,7 @@ void virtualMachine::debugProtected(string f){
     cout << "Welcome to the Virtual Machine debugger:" << endl << endl;
     
     while (command != "run"){
+        cout << "> ";
         getline(cin, command);
         if (command[0] == 'b' && command[1] == ' ') {
             addBreak(command.substr(2));
@@ -129,10 +148,16 @@ void virtualMachine::debugProtected(string f){
             removeBreak(command.substr(3));
         } else if (command == "pb") {
             printBreaks();
+        } else if (command == "cb") {
+            clearBreaks();
         } else if (command == "help") {
             printHelp();
         } else if (command == "q"){
             return;
+        } else if (command == "run") {
+            continue;
+        } else if (command == "ps") {
+            s.printStack();
         } else if (command != "") {
             cout << "Unknown debugger command. Type help for more information" << endl;
         }
@@ -147,13 +172,17 @@ void virtualMachine::debugProtected(string f){
             
             unsigned short adr = getAddress();
             
-            for (int i = 0; i < 50;i++){
+            for (int i = 0; i < numLineBreaks;i++){
                 if (lineBreaks[i] == 0) {
                     continue;
                 } else if (lineBreaks[i] == adr) {
                     mode = STEP_MODE;
-                    continue;
+                    break;
                 }
+            }
+            
+            if (mode == STEP_MODE){
+                continue;
             }
             
             val = getWord();
@@ -167,6 +196,7 @@ void virtualMachine::debugProtected(string f){
             command = "";
             
             while (command != "ni") {
+                cout << "> ";
                 getline(cin, command);
                 if (command[0] == 'b' && command[1] == ' ') {
                     addBreak(command.substr(2));
@@ -174,6 +204,8 @@ void virtualMachine::debugProtected(string f){
                     removeBreak(command.substr(3));
                 } else if (command == "pb") {
                     printBreaks();
+                } else if (command == "cb") {
+                    clearBreaks();
                 } else if (command == "disas") {
                     printCommands("20");
                 } else if (command.substr(0,6) == "disas ") {
@@ -189,6 +221,12 @@ void virtualMachine::debugProtected(string f){
                 } else if (command == "run") {
                     mode = RUN_MODE;
                     break;
+                } else if (command == "ni") {
+                    continue;
+                } else if (command == "ps") {
+                    s.printStack();
+                } else if (command == "pa"){
+                    cout << getAddress() << endl;
                 } else if (command != "") {
                     cout << "Unknown debugger command. Type help for more information" << endl;
                 }
@@ -459,8 +497,10 @@ void virtualMachine::printHelp() {
     cout << "    b [line number/command]: Will add a breakpoint at specified destination" << endl;
     cout << "    rb [line number/command]: Will remove specific breakpoint" << endl;
     cout << "    pb: Will print all current breaks" << endl;
+    cout << "    cb: Will clear all current breaks" << endl;
     cout << "    disas [number of commands (optional)]: Will print out next number of commands" << endl;
     cout << "    ir: Will print out values of each register" << endl;
+    cout << "    ps: Will print out the current stack" << endl;
     cout << "    jmp: Will jump to specific address" << endl;
     cout << "    ni: Will step one command forward in program" << endl;
     cout << "    q: Will quit out of program" << endl;
