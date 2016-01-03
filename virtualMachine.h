@@ -59,6 +59,7 @@ private:
     void debugJmp(string adr);
     int numArgs(unsigned short cmd);
     string getString(unsigned short cmd);
+    void printSymbolTable();
     
     fstream file;
     unsigned short r[8];

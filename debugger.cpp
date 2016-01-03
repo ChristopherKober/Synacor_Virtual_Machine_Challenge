@@ -44,6 +44,8 @@ void virtualMachine::debug(string f){
             continue;
         } else if (command == "ps") {
             s.printStack();
+        } else if (command == "symbol") {
+            printSymbolTable();
         } else if (command != "") {
             cout << "Unknown debugger command. Type help for more information" << endl;
         }
@@ -158,6 +160,8 @@ void virtualMachine::debugProtected(string f){
             continue;
         } else if (command == "ps") {
             s.printStack();
+        } else if (command == "symbol") {
+            printSymbolTable();
         } else if (command != "") {
             cout << "Unknown debugger command. Type help for more information" << endl;
         }
@@ -578,4 +582,57 @@ string virtualMachine::getString(unsigned short cmd){
             return "noop";
     }
     return "n/a";
+}
+
+void virtualMachine::printSymbolTable() {
+    
+    unsigned short startAdr = getAddress();
+    
+    jmp(0);
+    
+    unsigned short cmd = 1;
+    
+    int calls[160];
+    int numCalls = 0;
+    
+    while (cmd != (unsigned short) -1) {
+        cmd = getWord();
+        
+        if (cmd == 17) {
+            
+            cmd = getWord();
+            if (cmd > 32767) {
+                continue;
+            }
+            unsigned short back = getAddress();
+            jmp(cmd);
+            int i;
+            for (i = 0; i < numCalls;i++){
+                if (calls[i] == cmd) { break; }
+            }
+            if (calls[i] == cmd) {
+                jmp(back);
+                continue;
+            } else {
+                calls[numCalls] = cmd;
+                numCalls++;
+            }
+            cout << "Function <" << getAddress() << "> no_name:" << endl;
+            cmd = 1;
+            while (cmd != 18 && cmd != 0) {
+                cmd = getWord();
+                jmp(getAddress() - 1);
+                printCommands("1");
+                jmp(getAddress() +  1 + numArgs(cmd));
+            }
+            cout << endl;
+            jmp(back);
+            cmd = 17;
+        } else {
+            for (int i = 0; i < numArgs(cmd);i++) {
+                getWord();
+            }
+        }
+    }
+    jmp(startAdr);
 }

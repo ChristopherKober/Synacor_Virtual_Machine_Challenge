@@ -138,6 +138,11 @@ int virtualMachine::jmp(unsigned short loc) {
         return 1;
     }
     
+    if (file.eof()){
+        file.clear();
+        file.seekg(0, ios::beg);
+    }
+    
     if (loc < 32768) {
         file.seekg((loc << 1) );
     } else {
